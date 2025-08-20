@@ -19,15 +19,17 @@ jobs:
       - name: Install Wrangler
         run: npm i -g wrangler
       - name: Configure secrets (GEMINI_API_KEY)
-        run: echo "${{ secrets.GEMINI_API_KEY }}" | wrangler secret put GEMINI_API_KEY --quiet
+        run: echo "${{ secrets.GEMINI_API_KEY }}" | wrangler secret put GEMINI_API_KEY --quiet --account-id $CLOUDFLARE_ACCOUNT_ID
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Configure secrets (ALLOWED_ORIGINS)
-        run: echo "${{ secrets.ALLOWED_ORIGINS }}" | wrangler secret put ALLOWED_ORIGINS --quiet
+        run: echo "${{ secrets.ALLOWED_ORIGINS }}" | wrangler secret put ALLOWED_ORIGINS --quiet --account-id $CLOUDFLARE_ACCOUNT_ID
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Publish Worker
         run: wrangler deploy --account-id $CLOUDFLARE_ACCOUNT_ID
         working-directory: worker
