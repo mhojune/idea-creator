@@ -3,20 +3,28 @@ export interface Env {
   ALLOWED_ORIGINS?: string; // 쉼표(,)로 구분된 오리진 목록. 미설정 시 * 허용
 }
 
-function buildCorsHeaders(request: Request, env: Env) {
+function resolveAllowedOrigin(request: Request, env: Env): string | null {
   const requestOrigin = request.headers.get("Origin") || "";
-  const allowed = (env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
-  const isWildcard = allowed.includes("*");
-  const originHeader = isWildcard
-    ? "*"
-    : allowed.includes(requestOrigin)
-    ? requestOrigin
-    : allowed[0] || "*";
-  return {
-    "Access-Control-Allow-Origin": originHeader,
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  } as Record<string, string>;
+  const raw = (env.ALLOWED_ORIGINS || "*").trim();
+  const allowed = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  if (allowed.length === 0) return "*";
+  if (allowed.includes("*")) return "*";
+  if (allowed.includes(requestOrigin)) return requestOrigin;
+  return null;
+}
+
+function buildCorsHeaders(request: Request, env: Env) {
+  const origin = resolveAllowedOrigin(request, env);
+  const reqHeaders = request.headers.get("Access-Control-Request-Headers") || "Content-Type";
+  const methods = request.headers.get("Access-Control-Request-Method") || "POST,OPTIONS";
+  const headers: Record<string, string> = {
+    "Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+    "Access-Control-Allow-Methods": methods,
+    "Access-Control-Allow-Headers": reqHeaders,
+    "Access-Control-Max-Age": "86400",
+  };
+  if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  return headers;
 }
 
 function json(data: unknown, init: ResponseInit = {}) {
@@ -112,7 +120,8 @@ export default {
     const cors = buildCorsHeaders(request, env);
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: { ...cors } });
+      // If origin is not allowed, return 204 without ACAO to make the failure explicit on client
+      return new Response(null, { status: 204, headers: { ...cors } });
     }
 
     const url = new URL(request.url);
