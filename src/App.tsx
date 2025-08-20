@@ -167,8 +167,9 @@ export default function App() {
 
         {!hasProxy && (
           <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            환경 변수 VITE_IDEA_API_BASE가 설정되어 있지 않습니다. 루트에 .env.local을 만들고
-            Cloudflare Worker URL(예: https://your-worker.your-subdomain.workers.dev)을 넣어주세요.
+            환경 변수 VITE_IDEA_API_BASE가 설정되어 있지 않습니다. 루트에 .env.local을
+            만들고 Cloudflare Worker URL(예:
+            https://your-worker.your-subdomain.workers.dev)을 넣어주세요.
           </div>
         )}
 
