@@ -10,6 +10,12 @@ on:
 jobs:
   deploy-worker:
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -18,23 +24,17 @@ jobs:
           node-version: 20
       - name: Install Wrangler
         run: npm i -g wrangler
+      - name: Verify auth
+        run: wrangler whoami --account-id $CLOUDFLARE_ACCOUNT_ID || true
+        working-directory: worker
       - name: Configure secrets (GEMINI_API_KEY)
-        run: echo "${{ secrets.GEMINI_API_KEY }}" | wrangler secret put GEMINI_API_KEY --quiet --account-id $CLOUDFLARE_ACCOUNT_ID
+        run: wrangler secret put GEMINI_API_KEY --text "$GEMINI_API_KEY" --account-id $CLOUDFLARE_ACCOUNT_ID --quiet
         working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Configure secrets (ALLOWED_ORIGINS)
-        run: echo "${{ secrets.ALLOWED_ORIGINS }}" | wrangler secret put ALLOWED_ORIGINS --quiet --account-id $CLOUDFLARE_ACCOUNT_ID
+        run: wrangler secret put ALLOWED_ORIGINS --text "$ALLOWED_ORIGINS" --account-id $CLOUDFLARE_ACCOUNT_ID --quiet
         working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Publish Worker
-        run: wrangler deploy --account-id $CLOUDFLARE_ACCOUNT_ID
+        run: wrangler deploy --account-id $CLOUDFLARE_ACCOUNT_ID --verbose
         working-directory: worker
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
 
