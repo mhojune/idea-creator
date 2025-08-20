@@ -3,28 +3,13 @@ export interface Env {
   ALLOWED_ORIGINS?: string; // 쉼표(,)로 구분된 오리진 목록. 미설정 시 * 허용
 }
 
-function resolveAllowedOrigin(request: Request, env: Env): string | null {
-  const requestOrigin = request.headers.get("Origin") || "";
-  const raw = (env.ALLOWED_ORIGINS || "*").trim();
-  const allowed = raw.split(",").map((s) => s.trim()).filter(Boolean);
-  if (allowed.length === 0) return "*";
-  if (allowed.includes("*")) return "*";
-  if (allowed.includes(requestOrigin)) return requestOrigin;
-  return null;
-}
-
-function buildCorsHeaders(request: Request, env: Env) {
-  const origin = resolveAllowedOrigin(request, env);
-  const reqHeaders = request.headers.get("Access-Control-Request-Headers") || "Content-Type";
-  const methods = request.headers.get("Access-Control-Request-Method") || "POST,OPTIONS";
-  const headers: Record<string, string> = {
-    "Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-    "Access-Control-Allow-Methods": methods,
-    "Access-Control-Allow-Headers": reqHeaders,
+function buildCorsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "*",
     "Access-Control-Max-Age": "86400",
-  };
-  if (origin) headers["Access-Control-Allow-Origin"] = origin;
-  return headers;
+  } as Record<string, string>;
 }
 
 function json(data: unknown, init: ResponseInit = {}) {
@@ -117,7 +102,7 @@ async function handleGenerate(request: Request, env: Env) {
 
 export default {
   async fetch(request: Request, env: Env) {
-    const cors = buildCorsHeaders(request, env);
+    const cors = buildCorsHeaders();
 
     if (request.method === "OPTIONS") {
       // If origin is not allowed, return 204 without ACAO to make the failure explicit on client
